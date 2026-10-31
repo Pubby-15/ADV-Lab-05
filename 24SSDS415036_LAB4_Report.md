@@ -1,183 +1,384 @@
-# LAB 4 — Git Basics for a Python Project
+# LAB 4 — GIT BASICS FOR A PYTHON PROJECT
 
 **Student:** Prabhas P Simha  
 **USN:** 24SSDS415036  
 **Programme:** Data Science and Analytics  
 **University:** Ramaiah University of Applied Sciences, Bengaluru  
-**GitHub:** [Pubby-15](https://github.com/Pubby-15)  
-**Repository:** [Pubby-15/ADV-Lab-05](https://github.com/Pubby-15/ADV-Lab-05)  
 **Date:** 31 October 2026
 
-## Abstract
-This lab demonstrates how Git tracks changes in a Python project and how GitHub hosts the project remotely. A Streamlit dashboard is used as the example application. The work covers repository setup, staging, commits, remote synchronization, branching, dependency management, and preparation for cloud deployment. The dashboard uses the Gapminder sample dataset included with Plotly, so a separate CSV download is not required.
+## PROBLEM STATEMENT
 
-## Problem statement
-Software projects change frequently. Without version control, it is difficult to identify changes, restore earlier versions, or experiment without affecting the stable application. The objective is to apply Git version control to a Python project, publish its source to GitHub, and prepare a Streamlit dashboard for deployment.
+Software projects need a reliable way to track changes and allow developers to work on the same code without overwriting each other's work. Git provides version control for this purpose. This lab follows a Python project from basic project files to a GitHub-hosted repository. A GitHub Personal Access Token (PAT) is used for HTTPS authentication when required. The project also prepares a Streamlit dashboard for deployment through GitHub and Streamlit Community Cloud.
 
-## Learning objectives
-- Understand the Git working directory, staging area, commits, and history.
-- Create a `.gitignore` file to exclude temporary files and secrets.
-- Connect a local repository to GitHub and push changes securely.
-- Practice the add, commit, and push workflow.
-- Create a feature branch and keep experimental changes separate from `main`.
-- Prepare a Streamlit application and its dependencies for cloud deployment.
+## LEARNING OBJECTIVES
 
-## Tools and technologies
-| Tool | Purpose |
-|---|---|
-| Python | Dashboard application language |
-| Git | Tracks changes and maintains commit history |
-| GitHub | Remote repository and collaboration |
-| Streamlit | Interactive web dashboard |
-| Pandas and Plotly | Data handling and visualizations |
-| Google Colab / Jupyter | Notebook environment |
+- Initialize and use a local Git repository, including the staging, commit, and log workflow.
+- Create a `.gitignore` file to keep unnecessary and sensitive files out of version control.
+- Understand GitHub Personal Access Token authentication for HTTPS pushes.
+- Connect a local repository to a remote GitHub repository and push commits.
+- Practice the everyday add, commit, and push cycle.
+- Create a feature branch, commit changes on it, and use a pull request for review.
+- Prepare a Streamlit dashboard and its dependencies for cloud deployment.
 
-## Procedure and code
+## WHY YOU NEED A PERSONAL ACCESS TOKEN
 
-### Task 1 — Configure Git identity
-```bash
-git config --global user.name "Prabhas P Simha"
-git config --global user.email "YOUR_GITHUB_EMAIL"
-git config --global --list
+GitHub does not accept account passwords for Git operations over HTTPS. A Personal Access Token can be used in place of a password. It should be created in GitHub Developer Settings with the repository permissions needed for the task. The token must be treated as a secret and entered securely, not written directly into a notebook, Python file, README, or remote URL. The notebook uses a hidden prompt and a temporary Git askpass helper so that the token is not printed in notebook output.
+
+# PROCEDURE
+
+## TASK 1: SET UP YOUR ENVIRONMENT
+
+### Step 1: Configuring Git Identity
+
+**Description**  
+Git identity is configured for the Colab session using a username and the email associated with the GitHub account. This information is attached to commits so that the author of each change can be identified.
+
+**Code Used**
+
+```python
+subprocess.run(["git", "config", "--global", "user.name", "Prabhas P Simha"], check=True)
+git_email = input("Enter the email associated with your GitHub account: ").strip()
+subprocess.run(["git", "config", "--global", "user.email", git_email], check=True)
 ```
-Git uses this information to identify the author of each commit.
 
-### Task 2 — Project structure
-```text
-ADV-Lab-05/
-├── app.py
-├── requirements.txt
-├── README.md
-├── .gitignore
-├── 24SSDS415036_LAB4_Code.ipynb
-├── 24SSDS415036_LAB4_Report.md
-└── feature_demo.py
+**Interpretation**  
+The Git username and email are configured. New commits created in the session will use this identity. Enter the email associated with the GitHub account before running the cell.
+
+### Step 2: Connecting to the Existing GitHub Repository
+
+**Description**  
+The existing public repository `Pubby-15/ADV-Lab-05` is cloned into the notebook environment. Cloning first preserves the remote history and avoids creating an unrelated local history.
+
+**Code Used**
+
+```python
+GITHUB_USER = "Pubby-15"
+REPO_NAME = "ADV-Lab-05"
+REPO_URL = f"https://github.com/{GITHUB_USER}/{REPO_NAME}.git"
+
+if not Path(".git").exists():
+    subprocess.run(["git", "clone", REPO_URL, REPO_NAME], check=True)
+    os.chdir(REPO_NAME)
 ```
-The application contains the dashboard, `requirements.txt` lists dependencies, and the README explains the project. The notebook documents the workflow.
 
-### Task 3 — Add a .gitignore file
-```gitignore
+**Interpretation**  
+The repository is cloned and the working directory is changed to the project folder. Existing files and commits are retained.
+
+## TASK 2: CREATE AND STRUCTURE THE PROJECT
+
+### Step 1: Creating the Project Files
+
+**Description**  
+The project uses `app.py`, `requirements.txt`, and `README.md`. The notebook checks whether each file exists and creates a starter file only when missing, so existing project work is not overwritten.
+
+**Code Used**
+
+```python
+if not Path("app.py").exists():
+    Path("app.py").write_text("print('hello from my project')\\n")
+if not Path("requirements.txt").exists():
+    Path("requirements.txt").write_text("pandas\\nmatplotlib\\n")
+if not Path("README.md").exists():
+    Path("README.md").write_text("# My Project\\n\\nA small project for the Git Basics lab.\\n")
+```
+
+**Interpretation**  
+The three main project files are checked or created. `app.py` contains the Python application, `requirements.txt` lists dependencies, and `README.md` provides project documentation.
+
+## TASK 3: ADD A .gitignore FILE
+
+**Description**  
+A `.gitignore` file prevents temporary files, cache folders, local data, and environment secrets from being included in version control.
+
+**Code Used**
+
+```python
+gitignore_content = """.ipynb_checkpoints/
+__pycache__/
+*.pyc
 .env
 .venv/
-__pycache__/
-.ipynb_checkpoints/
-*.pyc
-/data/
+venv/
+data/
 *.csv
+*.xlsx
+*.parquet
+"""
+Path(".gitignore").write_text(gitignore_content, encoding="utf-8")
 ```
-These rules prevent secrets, local environments, cache files, and local datasets from entering version control.
 
-### Task 4 — Initialize, stage, and commit
+**Interpretation**  
+The ignore rules exclude Jupyter checkpoints, Python cache files, environment files, local virtual environments, data folders, and local data files.
+
+## TASK 4: INITIALIZE, ADD AND COMMIT
+
+### Step 1: Initializing the Local Repository
+
 ```bash
-git init -b main
+git init -q
 git add .
 git status
-git commit -m "Add Streamlit dashboard project"
+```
+
+**Interpretation**  
+`git init` initializes or reinitializes the local repository. `git add .` moves changed files into the staging area, and `git status` displays staged and unstaged changes.
+
+### Step 2: Creating the Initial Commit and Viewing History
+
+```bash
+git commit -m "Initial commit: project skeleton"
 git log --oneline
 ```
-The commands create a repository, stage files, inspect the staging area, save a commit, and display its history. When working from a cloned repository, cloning has already initialized Git.
 
-### Task 5 — Connect the GitHub remote and push
-The project is associated with the existing public repository **Pubby-15/ADV-Lab-05**.
+**Interpretation**  
+The commit stores a snapshot of staged changes. `git log --oneline` displays the repository history in a compact format. The notebook skips an empty commit when no files are staged.
 
-```bash
-git branch -M main
-git remote add origin https://github.com/Pubby-15/ADV-Lab-05.git
-git push -u origin main
+![Recent GitHub commit history evidence](evidence/github_commit_history_snapshot.svg)
+
+*Figure 1. Recent commit history reconstructed from verified repository commit data.*
+
+## TASK 5: CREATE THE GITHUB REPOSITORY AND PUSH
+
+**Description**  
+The local project is connected to the existing public GitHub repository. The URL is set as the `origin` remote. The notebook requests a Personal Access Token through a hidden prompt and passes it to Git through a temporary askpass helper.
+
+**GitHub Repository:** https://github.com/Pubby-15/ADV-Lab-05
+
+**Code Used**
+
+```python
+remote_url = f"https://github.com/{GITHUB_USER}/{REPO_NAME}.git"
+# Add or update the origin remote with the repository URL.
+# Enter the Personal Access Token with getpass.getpass("GitHub PAT (hidden): ")
+# The notebook uses a temporary GIT_ASKPASS script for authentication.
+subprocess.run(["git", "branch", "-M", "main"], check=True)
+git_push_secure("main")
 ```
 
-A GitHub Personal Access Token or another supported authentication method may be used for HTTPS pushes. Never store a token in a notebook, source file, README, or remote URL. The companion notebook uses a hidden prompt for token input.
+**Interpretation**  
+The local branch is named `main` and connected to GitHub through `origin`. The hidden token prompt is used if HTTPS authentication is needed. The repository is public and contains the dashboard source, notebook, report source, and supporting files.
 
-### Task 6 — Everyday Git workflow
+![GitHub repository contents](evidence/github_repository_snapshot.svg)
+
+*Figure 2. Main-branch repository contents. This evidence illustration was reconstructed from authenticated GitHub repository API data on 31 October 2026; it is not a direct browser screenshot.*
+
+## TASK 6: PRACTICE THE EVERYDAY GIT WORKFLOW
+
+**Description**  
+The starter application file is updated with the Streamlit dashboard. The updated file is staged, committed, and pushed to the `main` branch.
+
+**Code Used**
+
 ```bash
-git status
 git add app.py
-git commit -m "Update dashboard"
+git commit -m "Update app.py"
 git push origin main
 git log --oneline
 ```
-After editing a file, stage the intended change, create a descriptive commit, and push it to GitHub.
 
-### Task 7 — Feature branch
+**Interpretation**  
+This demonstrates the standard daily Git workflow: modify the required files, stage changes, save a commit, and push it to GitHub. Commit history provides a record of project versions.
+
+### Streamlit Dashboard Code
+
+The application uses Plotly's bundled Gapminder sample dataset. It provides a year slider, a continent selector, three key metrics, and a scatter plot comparing GDP per capita with life expectancy.
+
+```python
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+
+st.set_page_config(page_title="County Development Dashboard", layout="wide")
+
+@st.cache_data
+def load_data():
+    return px.data.gapminder()
+
+df = load_data()
+st.title("County Development Dashboard")
+
+st.sidebar.header("Filters")
+years = sorted(df["year"].unique())
+selected_year = st.sidebar.slider(
+    "Year", int(min(years)), int(max(years)), int(max(years)), 5
+)
+continents = sorted(df["continent"].unique())
+selected_continents = st.sidebar.multiselect(
+    "Continent", continents, default=continents
+)
+
+filtered = df[(df["year"] == selected_year) & (df["continent"].isin(selected_continents))].copy()
+
+st.subheader("Key Metrics")
+col1, col2, col3 = st.columns(3)
+col1.metric("Countries", int(filtered["country"].nunique()))
+col2.metric("Median life expectancy",
+            f'{filtered["lifeExp"].median():.1f} yrs' if not filtered.empty else "0.0 yrs")
+col3.metric("Total population",
+            f'{filtered["pop"].sum() / 1_000_000:.2f} B' if not filtered.empty else "0.00 B")
+
+st.subheader("GDP per Capita vs Life Expectancy")
+if filtered.empty:
+    st.warning("No records match the selected filters.")
+else:
+    fig = px.scatter(
+        filtered, x="gdpPercap", y="lifeExp", size="pop", color="continent",
+        hover_name="country", log_x=True, size_max=55,
+        title=f"Development Overview — {selected_year}",
+        labels={"gdpPercap": "GDP per capita", "lifeExp": "Life expectancy", "pop": "Population"},
+    )
+    fig.update_layout(height=620)
+    st.plotly_chart(fig, use_container_width=True)
+
+st.caption("LAB 4 — Git Basics for a Python Project")
+```
+
+![GitHub app.py file view](evidence/github_app_py_snapshot.svg)
+
+*Figure 3. Source view reconstructed from the verified main-branch `app.py` file.*
+
+## TASK 7: CREATE A BRANCH AND PUSH IT
+
+### Step 1: Viewing Existing Branches
+
 ```bash
 git branch
-git switch -c feature/experiment
-git add feature_demo.py
-git commit -m "Add feature branch demonstration"
+```
+
+**Interpretation**  
+The command lists the local branches and highlights the active branch.
+
+### Step 2: Creating or Switching to a Feature Branch
+
+```bash
+git checkout -b feature/experiment
+```
+
+When the remote feature branch already exists, the notebook fetches and switches to it rather than creating a duplicate branch.
+
+**Interpretation**  
+The `feature/experiment` branch keeps experimental changes separate from the stable `main` branch.
+
+### Step 3: Making a Change on the Feature Branch
+
+```python
+with open("app.py", "r+", encoding="utf-8") as f:
+    content = f.read()
+    if "# Feature experiment branch update" not in content:
+        f.write("\\n# Feature experiment branch update\\n")
+```
+
+### Step 4: Staging, Committing and Pushing
+
+```bash
+git status
+git add app.py
+git commit -m "Add experiment feature"
 git push -u origin feature/experiment
 ```
-A feature branch isolates new work from the stable branch. A pull request can be opened on GitHub to propose merging the feature into `main`.
 
-## Streamlit dashboard
+**Interpretation**  
+The changes are committed on the feature branch and pushed to GitHub. A pull request is used to propose review and merging into `main`.
 
-The Global Development Dashboard loads Plotly's bundled Gapminder dataset. It contains a year selector and continent filter. Key indicators include country count, median life expectancy, total population, and median GDP per capita. The application displays a scatter plot of GDP per capita against life expectancy and a bar chart of average life expectancy by continent.
+![Pull request evidence](evidence/github_pull_request_snapshot.svg)
 
-### Dependencies
-```text
-streamlit>=1.40
-pandas>=2.0
-plotly>=5.20
-```
+*Figure 4. Pull Request #1 is open from `feature/experiment` into `main`. Its changes include the feature marker in `app.py` and the `feature_demo.py` example. The illustration is reconstructed from verified pull request API data, not a browser capture.*
 
-### Run locally
+## TASK 8: PREPARE THE STREAMLIT DASHBOARD FOR DEPLOYMENT
+
+### Step 1: Switching Back to the Main Branch
+
 ```bash
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-# macOS/Linux: source .venv/bin/activate
-pip install -r requirements.txt
-streamlit run app.py
+git switch main
 ```
 
-### Interpretation
-The scatter plot allows country-level comparison, while the bar chart summarizes average life expectancy by continent. The data is a bundled demonstration dataset and should not be treated as a current official statistical release.
+**Interpretation**  
+The working environment is switched back from the feature branch to the stable `main` branch.
 
-## GitHub repository and evidence
-The repository is available at: https://github.com/Pubby-15/ADV-Lab-05
+### Step 2: Checking Existing Dependencies
 
-The supplied GitHub profile screenshot shows the Pubby-15 account and the ADV-Lab-05 repository. It is a profile-identification screenshot supplied before the files in this lab were added, not a screenshot of the final repository contents. The latest file list can be checked directly through the repository URL.
+```bash
+cat requirements.txt
+```
 
-## Streamlit Community Cloud deployment
-1. Open [Streamlit Community Cloud](https://share.streamlit.io/) and sign in using GitHub.
-2. Create a new app and select `Pubby-15/ADV-Lab-05`.
-3. Choose the `main` branch and set `app.py` as the main application file.
-4. Deploy and allow the platform to install the listed dependencies.
-5. Copy the generated `.streamlit.app` URL after a successful deployment.
+### Step 3: Updating requirements.txt for Streamlit
 
-**Deployment status: Pending.** The source and dependency files are prepared in GitHub, but a live URL has not been published or verified as part of this lab.
+```python
+with open("requirements.txt", "w", encoding="utf-8") as f:
+    f.write("streamlit\\npandas\\nplotly\\n")
+```
 
-## Data insights and findings
-- Git provides a history of project versions through commits.
-- The staging area controls which files are included in a commit.
-- `.gitignore` keeps secrets, caches, environments, and local data out of the repository.
-- GitHub provides remote hosting and a collaboration point.
-- Feature branches support experimentation without directly changing `main`.
-- `requirements.txt` makes the Python environment easier to reproduce.
-- Interactive filters help compare countries and regions across years.
+### Step 4: Committing and Pushing Deployment Requirements
 
-## Recommendations / applications
-1. Use version control from the beginning of every software or data science project.
-2. Create small commits with meaningful messages.
-3. Keep passwords, API keys, and tokens outside source files and public repositories.
-4. Use feature branches for changes that need separate testing or review.
-5. Maintain a README that explains setup, execution, and project structure.
-6. Update dependencies whenever the application changes.
-7. Review repository contents before making a public push.
+```bash
+git add requirements.txt
+git commit -m "Update requirements for Streamlit"
+git push origin main
+```
 
-## Conclusion
-The lab demonstrates the basic Git workflow for a Python project and the role of GitHub as a remote repository. The dashboard source, dependency list, README, and ignore rules provide a structured project. The companion notebook contains reproducible commands for identity setup, staging, commits, remote push, and feature branching. The Streamlit application is prepared for deployment; publication remains a separate final step to complete and verify on Streamlit Community Cloud.
+**Interpretation**  
+The dependency file lists Streamlit, Pandas, and Plotly. These dependencies can be installed by the deployment platform when it builds the dashboard.
 
-## Appendix — Important commands
-| Command | Purpose |
-|---|---|
-| `git status` | Checks the working tree and staging area |
-| `git add .` | Stages project changes |
-| `git commit -m "message"` | Creates a commit |
-| `git log --oneline` | Displays compact commit history |
-| `git remote -v` | Shows configured remote repositories |
-| `git push -u origin main` | Pushes main and sets upstream tracking |
-| `git switch -c feature/experiment` | Creates and switches to a feature branch |
-| `git push -u origin feature/experiment` | Publishes the feature branch |
+### Step 5: Deploying on Streamlit Community Cloud
 
+1. Open https://share.streamlit.io/ and sign in with GitHub.
+2. Select **Create app**.
+3. Select repository `Pubby-15/ADV-Lab-05`.
+4. Select the `main` branch.
+5. Select `app.py` as the main application file.
+6. Click **Deploy** and wait for dependency installation.
+7. Copy the generated public URL after the app starts successfully.
 
-## Pull request record
-A feature demonstration file was pushed to the `feature/experiment` branch. [Pull Request #1](https://github.com/Pubby-15/ADV-Lab-05/pull/1) was opened against `main` and is awaiting review. It has not been merged.
+**Interpretation**  
+The GitHub repository is prepared for Streamlit Community Cloud. The application and dependency file are present, but a live deployment URL has not yet been generated or verified.
+
+**GitHub Repository:** https://github.com/Pubby-15/ADV-Lab-05  
+**Pull Request:** https://github.com/Pubby-15/ADV-Lab-05/pull/1  
+**Streamlit App URL:** Deployment pending
+
+![Dashboard preview](evidence/dashboard_preview.svg)
+
+*Figure 5. County Development Dashboard chart preview based on Plotly's bundled Gapminder sample data (2007 view).*
+
+## GITHUB ACCOUNT AND REPOSITORY EVIDENCE
+
+The profile screenshot included in the Word report is the actual screenshot supplied by the student. Repository file-list, source-file, commit-history, and pull-request illustrations are reconstructed from verified GitHub API responses checked on 31 October 2026. They are clearly identified as API-derived evidence and not direct browser captures.
+
+## DATA INSIGHTS & FINDINGS
+
+### Key Findings
+
+- Git provides a structured way to track important versions of a software project.
+- The staging area allows developers to select the changes included in each commit.
+- Commit messages make project history easier to understand and maintain.
+- A `.gitignore` file keeps temporary files, local datasets, and environment secrets out of version control.
+- GitHub acts as a remote hosting and collaboration platform for Git repositories.
+- Personal Access Tokens can provide secure authentication for HTTPS Git operations.
+- Feature branches allow new functionality to be developed separately from the stable `main` branch.
+- The Streamlit dashboard can be maintained with the source code and dependency list in the same repository.
+- A clear `requirements.txt` makes the dashboard easier to reproduce and deploy.
+
+### Overall Insight
+
+This lab demonstrates that version control is an important part of software and data science development. Git maintains a history of changes, while GitHub provides remote storage and a place to review changes. Branch-based development makes experimentation safer, and keeping dependencies documented supports reproducibility.
+
+## BUSINESS RECOMMENDATIONS / APPLICATIONS
+
+1. **Use version control for all projects.** Start Git tracking from the beginning of software and data science projects.
+2. **Create meaningful commits.** Save small changes with clear commit messages instead of grouping unrelated work together.
+3. **Protect sensitive files.** Use `.gitignore` and never place passwords, API keys, or tokens in public repositories.
+4. **Use feature branches.** Develop and test new features separately before merging them into the stable branch.
+5. **Maintain proper documentation.** Include a README explaining the project purpose, setup, dependencies, and usage.
+6. **Maintain deployment dependencies.** Update `requirements.txt` whenever the application uses additional libraries.
+7. **Use GitHub for collaboration and portfolio development.** A well-maintained repository provides a central place for backup, version tracking, collaboration, and showcasing work.
+
+## CONCLUSION
+
+The objective of this lab was to understand Git version control for a Python project and connect the project to a remote GitHub repository. A project structure containing `app.py`, `requirements.txt`, and `README.md` was checked, and a `.gitignore` file was added to exclude unnecessary files.
+
+The fundamental Git workflow of staging, committing, and viewing history was practiced. The local repository was connected to the public GitHub repository `Pubby-15/ADV-Lab-05`. The dashboard source was updated with Streamlit code using the Gapminder sample dataset, and its dependencies were recorded in `requirements.txt`.
+
+A separate `feature/experiment` branch was used to demonstrate independent development. Pull Request #1 was opened against `main` and remains open for review. Finally, the project was prepared for Streamlit Community Cloud deployment. Deployment is still pending until a live application URL is created and tested.
+
+Overall, this experiment demonstrates how Git and GitHub support project tracking, collaboration, feature development, and application deployment preparation.
+
