@@ -177,3 +177,7 @@ The lab demonstrates the basic Git workflow for a Python project and the role of
 | `git push -u origin main` | Pushes main and sets upstream tracking |
 | `git switch -c feature/experiment` | Creates and switches to a feature branch |
 | `git push -u origin feature/experiment` | Publishes the feature branch |
+
+
+## Pull request record
+A feature demonstration file was pushed to the `feature/experiment` branch. [Pull Request #1](https://github.com/Pubby-15/ADV-Lab-05/pull/1) was opened against `main` and is awaiting review. It has not been merged.
