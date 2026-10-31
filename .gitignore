@@ -1,0 +1,28 @@
+# Python cache and build files
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+build/
+dist/
+
+# Jupyter files
+.ipynb_checkpoints/
+
+# Local environments and secrets
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+
+# Local datasets and generated outputs
+/data/
+*.csv
+*.xlsx
+*.parquet
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
